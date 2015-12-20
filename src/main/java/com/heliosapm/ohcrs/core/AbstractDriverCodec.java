@@ -25,9 +25,10 @@ import io.netty.buffer.ByteBuf;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>com.heliosapm.ohcrs.core.AbstractDriverCodec</code></p>
+ * @param <T> The non primitive type being operated on
  */
 
-public abstract class AbstractDriverCodec implements DriverCodec {
+public abstract class AbstractDriverCodec<T> implements DriverCodec<T> {
 	/** Static token indicating a primitive */
 	public static final Object P = new Object();
 	
@@ -43,10 +44,12 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	/**
 	 * Sets the wasnull flag for the current thread representing the prior read from the buffer
 	 * @param b true if the read was null, false otherwise
+	 * @return the boolean value that was set
 	 */
 	@SuppressWarnings("static-method")
-	protected void wasnull(final boolean b) {
+	protected boolean wasnull(final boolean b) {
 		WASNULL.get()[0] = b;
+		return b;
 	}
 	
 	/**
@@ -238,6 +241,17 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 		return b.writerIndex();
 	}
 	
+	/**
+	 * Reads the boolean flag to see if the write represented a null.
+	 * Also sets the wasnull flag so the caller can check to see if the read of a primitive
+	 * was actually null or not.
+	 * @param b The buffer to read from
+	 * @return true if the value was encoded as a null, false otherwise
+	 */
+	protected boolean checkNull(final ByteBuf b) {
+		final boolean wnb = b.readBoolean();
+		return wasnull(!wnb);
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -245,11 +259,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Boolean readBoolean(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) {
-			wasnull(true);
-			return null;
-		}
-		wasnull(false);
+		if(checkNull(b)) return null;
 		return b.readBoolean();
 	}
 	
@@ -259,7 +269,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public boolean readboolean(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return false;
+		if(checkNull(b)) return false;
 		return b.readBoolean();
 	}
 	
@@ -270,7 +280,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Byte readByte(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readByte();
 	}
 	
@@ -280,7 +290,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public byte readbyte(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0;
+		if(checkNull(b)) return 0;
 		return b.readByte();
 	}
 
@@ -290,7 +300,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Short readShort(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readShort();
 	}
 	
@@ -300,7 +310,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public short readshort(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0;
+		if(checkNull(b)) return 0;
 		return b.readShort();
 	}
 	
@@ -311,7 +321,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Integer readInt(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readInt();
 	}
 	
@@ -321,7 +331,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public int readint(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0;
+		if(checkNull(b)) return 0;
 		return b.readInt();
 	}
 	
@@ -332,7 +342,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Float readFloat(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readFloat();
 	}
 	
@@ -342,7 +352,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public float readfloat(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0F;
+		if(checkNull(b)) return 0F;
 		return b.readFloat();
 	}
 	
@@ -353,7 +363,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Long readLong(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readLong();
 	}
 	
@@ -363,7 +373,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public long readlong(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0L;
+		if(checkNull(b)) return 0L;
 		return b.readLong();
 	}
 
@@ -374,7 +384,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public Double readDouble(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return null;
+		if(checkNull(b)) return null;
 		return b.readDouble();
 	}
 	
@@ -384,7 +394,7 @@ public abstract class AbstractDriverCodec implements DriverCodec {
 	 */
 	@Override
 	public double readdouble(final ByteBuf b) throws SQLException {
-		if(!b.readBoolean()) return 0D;
+		if(checkNull(b)) return 0D;
 		return b.readDouble();
 	}
 	

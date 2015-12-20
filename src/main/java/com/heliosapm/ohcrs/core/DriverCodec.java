@@ -26,9 +26,10 @@ import io.netty.buffer.ByteBuf;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>com.heliosapm.ohcrs.core.DriverCodec</code></p>
+ * @param <T> The non primitive type being operated on
  */
 
-public interface DriverCodec {
+public interface DriverCodec<T> {
 
 	/**
 	 * Writes the supplied object into the passed buffer
@@ -36,21 +37,19 @@ public interface DriverCodec {
 	 * @param d The DBType of the object
 	 * @param b The buffer to write into
 	 * @return the new writer index of the buffer
-	 * @param <T> The non primitive type being operated on
 	 * @throws SQLException thrown on any error writing the value to the buffer
 	 * 
 	 */
-	public <T> int write(T t, DBType d, ByteBuf b) throws SQLException;
+	public int write(T t, DBType d, ByteBuf b) throws SQLException;
 	
 	/**
 	 * Reads an object from the passed buffer
 	 * @param d The DBType of the object to read
 	 * @param b The buffer to read from
 	 * @return The read object or null if the buffer segment's encoding indicated a null was written
-	 * @param <T> The non primitive type being operated on
 	 * @throws SQLException thrown on any error reading the value from the buffer
 	 */
-	public <T> T read(DBType d, ByteBuf b) throws SQLException;
+	public T read(DBType d, ByteBuf b) throws SQLException;
 	
     /**
      * Writes the supplied boolean into the passed buffer

@@ -15,6 +15,8 @@
  */
 package com.heliosapm.ohcrs.core;
 
+import gnu.trove.map.hash.TShortObjectHashMap;
+
 /**
  * <p>Title: DBType</p>
  * <p>Description: </p> 
@@ -99,11 +101,27 @@ public enum DBType {
 	
 	
 	private DBType(final int code) {
-		this.code = code;
+		this.code = (short)code;
+		str = name() + "/" + code;
+	}
+	
+	private static final DBType[] values = values();
+	private static final TShortObjectHashMap<DBType> CODE2ENUM = new TShortObjectHashMap<DBType>(values.length, 0.1f, Short.MAX_VALUE);
+	
+	static {
+		for(DBType t: values) {
+			CODE2ENUM.put(t.code, t);
+		}
+	}
+	
+	public String toString() {
+		return str;
 	}
 	
 	/** The JDBC type code for this DBType member */
-	public final int code;
+	public final short code;
+	
+	public final String str;
 	
 	/**
 	 * Returns the type's JDBC type code as a short
@@ -111,6 +129,17 @@ public enum DBType {
 	 */
 	public short code() {
 		return (short)code;
+	}
+	
+	/**
+	 * Returns the DBType for the passed code
+	 * @param code The code 
+	 * @return the DBType
+	 */
+	public static DBType forCode(final int code) {
+		final DBType t = CODE2ENUM.get((short)code);
+		if(t==null) throw new IllegalArgumentException("The passed code [" + code + "] was not a valid DBType code");
+		return t;
 	}
 
 }
