@@ -98,46 +98,26 @@ public class OracleDriverCodec extends AbstractDriverCodec<Datum> {
 				final int charsetCode = b.readInt();
 				final CharacterSet cs = CharacterSet.make(charsetCode);
 				return new oracle.sql.CHAR(bytes, cs);
-			case STRUCT:
-				
-			
-			case BINARY:
-				break;
-			case BIT:
-				break;
-			case BLOB:
-				break;
-			case BOOLEAN:
-				break;
-			case CLOB:
-				break;
-			case DATALINK:
-				break;
-			case DISTINCT:
-				break;
-			case JAVA_OBJECT:
-				break;
-			case LONGVARBINARY:
-				break;
-			case NCLOB:
-				break;
-			case NULL:
-				break;
-			case OTHER:
-				break;
-			case REAL:
-				break;
-			case REF:
-				break;
-			case SQLXML:
-				break;
-			case VARBINARY:
-				break;
 			default:
-				break;		
+				throw new UnsupportedOperationException(dbType.name());
+//			case STRUCT:
+//			case BINARY:
+//			case BIT:
+//			case BLOB:
+//			case BOOLEAN:
+//			case CLOB:
+//			case DATALINK:
+//			case DISTINCT:
+//			case JAVA_OBJECT:
+//			case LONGVARBINARY:
+//			case NCLOB:
+//			case NULL:
+//			case OTHER:
+//			case REAL:
+//			case REF:
+//			case SQLXML:
+//			case VARBINARY:
 		}
-		
-		return null;
 	}
 
 
