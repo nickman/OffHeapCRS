@@ -15,10 +15,12 @@
  */
 package com.heliosapm.ohcrs.core;
 
+import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
+import gnu.trove.list.array.TIntArrayList;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -32,6 +34,38 @@ import io.netty.buffer.ByteBuf;
 public class OffHeapResultMetaData implements ResultSetMetaData {
 	/** The off-heap buffer */
 	protected final ByteBuf buf;
+	/** The row offsets */
+	protected final TIntArrayList rowOffsets;
+	
+	/** The UTF8 Character Set */
+	private static final Charset UTF8 = Charset.forName("UTF8");
+	
+	private static final byte[] EMPTY_BYTE_ARR = {};
+	private static final byte[] SEVEN_INTS_BYTE_ARR = new byte[4 * 7];
+	
+	private static final int COL_AUTO_INCR = 0;
+	private static final int COL_CASE_SENS = 1;
+	private static final int COL_CURRENCY = 2;
+	private static final int COL_DEF_WRITABLE = 3;
+	private static final int COL_READ_ONLY = 4;
+	private static final int COL_SEARCHABLE = 5;
+	private static final int COL_SIGNED = 6;
+	private static final int COL_WRITABLE = 7;
+	
+	
+	private static final int COL_DISPLAY_SIZE = 8;
+	private static final int COL_TYPE = 12;
+	private static final int COL_PRECISION = 16;
+	private static final int COL_SCALE = 20;
+	private static final int COL_NULLABLE = 24;
+	
+	private static final int COL_CAT_NAME = 28;
+	private static final int COL_CLASS_NAME = 32;
+	private static final int COL_LABEL = 36;
+	private static final int COL_NAME = 40;
+	private static final int COL_TYPE_NAME = 44;
+	private static final int COL_SCHEMA_NAME = 48;
+	private static final int COL_TABLE_NAME = 52;
 	
 	/**
 	 * Creates a new OffHeapResultMetaData
@@ -43,18 +77,81 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 		final ResultSetMetaData rsmd = rset.getMetaData();
 		final int rowSizeEstimate = (6*4) + 8 + (7*32);
 		final int colCount = rsmd.getColumnCount();
+		rowOffsets = new TIntArrayList(colCount);		
 		buf = DBContext.allocateBuffer(rowSizeEstimate * colCount);
 		buf.writeInt(colCount);		
+		rowOffsets.add(buf.writerIndex());
+		for(int i = 1; i <= colCount; i++) {
+			buf.writeBoolean(rsmd.isAutoIncrement(i));
+			buf.writeBoolean(rsmd.isCaseSensitive(i));
+			buf.writeBoolean(rsmd.isCurrency(i));
+			buf.writeBoolean(rsmd.isDefinitelyWritable(i));
+			buf.writeBoolean(rsmd.isReadOnly(i));
+			buf.writeBoolean(rsmd.isSearchable(i));
+			buf.writeBoolean(rsmd.isSigned(i));
+			buf.writeBoolean(rsmd.isWritable(i));
+			buf.writeInt(rsmd.getColumnDisplaySize(i));
+			buf.writeInt(rsmd.getColumnType(i));
+			buf.writeInt(rsmd.getPrecision(i));
+			buf.writeInt(rsmd.getScale(i));
+			buf.writeInt(rsmd.isNullable(i));
+			final int strOffsets = buf.writerIndex();
+			buf.writeBytes(SEVEN_INTS_BYTE_ARR);
+			final int[] indexes = new int[7];
+			indexes[0] = buf.writerIndex();
+			indexes[1] = writeUTF(rsmd.getCatalogName(i));
+			indexes[2] = writeUTF(rsmd.getColumnClassName(i));
+			indexes[3] = writeUTF(rsmd.getColumnLabel(i));
+			indexes[4] = writeUTF(rsmd.getColumnName(i));
+			indexes[5] = writeUTF(rsmd.getColumnTypeName(i));
+			indexes[6] = writeUTF(rsmd.getSchemaName(i));
+			final int lastOffset = writeUTF(rsmd.getTableName(i));
+			buf.writerIndex(strOffsets);
+			for(int x : indexes) {
+				buf.writeInt(x);
+			}
+			buf.writerIndex(lastOffset);
+			rowOffsets.add(lastOffset);
+		}
 	}
 
+	/**
+	 * Writes a string to the buffer at the current index
+	 * @param s The string to write
+	 * @return the buffer's new writer index
+	 */
+	protected int writeUTF(final String s) {
+		final byte[] bytes = s==null ? EMPTY_BYTE_ARR : s.trim().getBytes(UTF8);
+		buf.writeInt(bytes.length);
+		buf.writeBytes(bytes);
+		return buf.writerIndex();
+	}
+	
+	/**
+	 * Reads a string from the buffer at the passed offset
+	 * @param offset The offset to read from
+	 * @return the read string
+	 */
+	protected String readUTF(final int offset) {
+		buf.readerIndex(offset);
+		final int x = buf.readInt();
+		if(x==0) return null;
+		final byte[] bytes = new byte[x];
+		buf.readBytes(bytes);
+		return new String(bytes, UTF8);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see java.sql.Wrapper#unwrap(java.lang.Class)
 	 */
 	@Override
-	public <T> T unwrap(Class<T> iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> T unwrap(final Class<T> iface) throws SQLException {
+		if(iface==null) throw new IllegalArgumentException("The passed class was null");
+		if(iface.isAssignableFrom(this.getClass())) {
+			return iface.cast(this);
+		}
+		throw new SQLException("Cannot unwrap OffHeapResultMetaData to [" + iface.getName() + "]");
 	}
 
 	/**
@@ -62,9 +159,9 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
 	 */
 	@Override
-	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isWrapperFor(final Class<?> iface) throws SQLException {
+		if(iface==null) throw new IllegalArgumentException("The passed class was null");
+		return iface.isAssignableFrom(this.getClass());
 	}
 
 	/**
@@ -73,8 +170,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 */
 	@Override
 	public int getColumnCount() throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+		return buf.getInt(0);
 	}
 
 	/**
@@ -82,9 +178,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isAutoIncrement(int)
 	 */
 	@Override
-	public boolean isAutoIncrement(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isAutoIncrement(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_AUTO_INCR);
 	}
 
 	/**
@@ -92,9 +187,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isCaseSensitive(int)
 	 */
 	@Override
-	public boolean isCaseSensitive(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isCaseSensitive(final int column) throws SQLException {		
+		return buf.getBoolean(rowOffsets.get(column) + COL_CASE_SENS);
 	}
 
 	/**
@@ -102,9 +196,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isSearchable(int)
 	 */
 	@Override
-	public boolean isSearchable(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isSearchable(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_SEARCHABLE);
 	}
 
 	/**
@@ -112,9 +205,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isCurrency(int)
 	 */
 	@Override
-	public boolean isCurrency(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isCurrency(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_CURRENCY);
 	}
 
 	/**
@@ -122,9 +214,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isNullable(int)
 	 */
 	@Override
-	public int isNullable(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	public int isNullable(final int column) throws SQLException {		
+		return buf.getInt(rowOffsets.get(column) + COL_NULLABLE);
 	}
 
 	/**
@@ -132,9 +223,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isSigned(int)
 	 */
 	@Override
-	public boolean isSigned(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isSigned(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_SIGNED);
 	}
 
 	/**
@@ -142,9 +232,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnDisplaySize(int)
 	 */
 	@Override
-	public int getColumnDisplaySize(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getColumnDisplaySize(final int column) throws SQLException {
+		return buf.getInt(rowOffsets.get(column) + COL_DISPLAY_SIZE);
 	}
 
 	/**
@@ -152,9 +241,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnLabel(int)
 	 */
 	@Override
-	public String getColumnLabel(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getColumnLabel(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_LABEL);
 	}
 
 	/**
@@ -162,9 +250,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnName(int)
 	 */
 	@Override
-	public String getColumnName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getColumnName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_NAME);
 	}
 
 	/**
@@ -172,9 +259,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getSchemaName(int)
 	 */
 	@Override
-	public String getSchemaName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getSchemaName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_SCHEMA_NAME);
 	}
 
 	/**
@@ -182,9 +268,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getPrecision(int)
 	 */
 	@Override
-	public int getPrecision(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getPrecision(final int column) throws SQLException {
+		return buf.getInt(rowOffsets.get(column) + COL_PRECISION);
 	}
 
 	/**
@@ -192,9 +277,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getScale(int)
 	 */
 	@Override
-	public int getScale(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getScale(final int column) throws SQLException {
+		return buf.getInt(rowOffsets.get(column) + COL_SCALE);
 	}
 
 	/**
@@ -202,9 +286,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getTableName(int)
 	 */
 	@Override
-	public String getTableName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getTableName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_TABLE_NAME);
 	}
 
 	/**
@@ -212,9 +295,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getCatalogName(int)
 	 */
 	@Override
-	public String getCatalogName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getCatalogName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_CAT_NAME);
 	}
 
 	/**
@@ -222,9 +304,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnType(int)
 	 */
 	@Override
-	public int getColumnType(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getColumnType(final int column) throws SQLException {
+		return buf.getInt(rowOffsets.get(column) + COL_TYPE);
 	}
 
 	/**
@@ -232,9 +313,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnTypeName(int)
 	 */
 	@Override
-	public String getColumnTypeName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getColumnTypeName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_TYPE_NAME);
 	}
 
 	/**
@@ -242,9 +322,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isReadOnly(int)
 	 */
 	@Override
-	public boolean isReadOnly(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isReadOnly(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_READ_ONLY);
 	}
 
 	/**
@@ -252,9 +331,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isWritable(int)
 	 */
 	@Override
-	public boolean isWritable(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isWritable(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_WRITABLE);
 	}
 
 	/**
@@ -262,9 +340,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#isDefinitelyWritable(int)
 	 */
 	@Override
-	public boolean isDefinitelyWritable(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isDefinitelyWritable(final int column) throws SQLException {
+		return buf.getBoolean(rowOffsets.get(column) + COL_DEF_WRITABLE);
 	}
 
 	/**
@@ -272,9 +349,8 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 	 * @see java.sql.ResultSetMetaData#getColumnClassName(int)
 	 */
 	@Override
-	public String getColumnClassName(int column) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getColumnClassName(final int column) throws SQLException {
+		return readUTF(rowOffsets.get(column) + COL_CLASS_NAME);
 	}
 
 }
