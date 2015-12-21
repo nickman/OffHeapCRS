@@ -15,13 +15,15 @@
  */
 package com.heliosapm.ohcrs.core;
 
+import gnu.trove.list.array.TIntArrayList;
+import io.netty.buffer.ByteBuf;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-
-import gnu.trove.list.array.TIntArrayList;
-import io.netty.buffer.ByteBuf;
 
 /**
  * <p>Title: OffHeapResultMetaData</p>
@@ -31,7 +33,7 @@ import io.netty.buffer.ByteBuf;
  * <p><code>com.heliosapm.ohcrs.core.OffHeapResultMetaData</code></p>
  */
 
-public class OffHeapResultMetaData implements ResultSetMetaData {
+public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	/** The off-heap buffer */
 	protected final ByteBuf buf;
 	/** The row offsets */
@@ -95,9 +97,9 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 			buf.writeInt(rsmd.getPrecision(i));
 			buf.writeInt(rsmd.getScale(i));
 			buf.writeInt(rsmd.isNullable(i));
-			final int strOffsets = buf.writerIndex();
-			buf.writeBytes(SEVEN_INTS_BYTE_ARR);
+			final int strOffsets = buf.writerIndex();			
 			final int[] indexes = new int[7];
+			buf.writeBytes(SEVEN_INTS_BYTE_ARR);
 			indexes[0] = buf.writerIndex();
 			indexes[1] = writeUTF(rsmd.getCatalogName(i));
 			indexes[2] = writeUTF(rsmd.getColumnClassName(i));
@@ -113,6 +115,26 @@ public class OffHeapResultMetaData implements ResultSetMetaData {
 			buf.writerIndex(lastOffset);
 			rowOffsets.add(lastOffset);
 		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.io.Closeable#close()
+	 */
+	@Override
+	public void close() throws IOException {
+		final int refs = buf.refCnt();
+		if(refs > 0) {
+			buf.release(refs);
+		}
+		rowOffsets.clear();
+	}
+	
+	/**
+	 * Checks the buffer to make sure it is not closed.
+	 */
+	protected void checkBuffer() {
+		if(buf.refCnt() < 1) throw new IllegalStateException("This ResultSetMetaData is closed");
 	}
 
 	/**
