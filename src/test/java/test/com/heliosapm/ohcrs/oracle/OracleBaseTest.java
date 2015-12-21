@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package test.com.heliosapm.ohcrs;
+package test.com.heliosapm.ohcrs.oracle;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 
 import oracle.jdbc.pool.OracleDataSource;
+import test.com.heliosapm.ohcrs.BaseTest;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -105,7 +106,7 @@ public class OracleBaseTest extends BaseTest {
 	
 	@BeforeClass
 	public static void setupBeforeClass() throws Exception {
-		createDataSource("DEFAULT", "tqreactor", "tq", "localhost", 1521, "xe");
+		createDataSource("DEFAULT", "ecs", "ecs", "localhost", 1521, "orcl");
 		log("Created default data source");
 	}
 

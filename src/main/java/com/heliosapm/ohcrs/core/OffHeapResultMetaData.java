@@ -42,9 +42,13 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	/** The UTF8 Character Set */
 	private static final Charset UTF8 = Charset.forName("UTF8");
 	
-	private static final byte[] EMPTY_BYTE_ARR = {};
-	private static final byte[] SEVEN_INTS_BYTE_ARR = new byte[4 * 7];
+	private static final int STRLEN_SPACE = 4 * 7; // 7 integers
 	
+	private static final byte[] EMPTY_BYTE_ARR = {};
+	private static final byte[] SEVEN_INTS_BYTE_ARR = new byte[STRLEN_SPACE];
+	
+	private static final int BUFFER_HEADER_OFFSET = 4;
+	 
 	private static final int COL_AUTO_INCR = 0;
 	private static final int COL_CASE_SENS = 1;
 	private static final int COL_CURRENCY = 2;
@@ -68,6 +72,15 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	private static final int COL_TYPE_NAME = 44;
 	private static final int COL_SCHEMA_NAME = 48;
 	private static final int COL_TABLE_NAME = 52;
+	
+	/**
+	 * Out printer
+	 * @param fmt the message format
+	 * @param args the message values
+	 */
+	public static void log(String fmt, Object...args) {
+		System.out.println(String.format(fmt, args));
+	}	
 	
 	/**
 	 * Creates a new OffHeapResultMetaData
@@ -143,24 +156,99 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	 * @return the buffer's new writer index
 	 */
 	protected int writeUTF(final String s) {
-		final byte[] bytes = s==null ? EMPTY_BYTE_ARR : s.trim().getBytes(UTF8);
+		final byte[] bytes = s==null ? EMPTY_BYTE_ARR : s.trim().getBytes(UTF8);		
 		buf.writeInt(bytes.length);
-		buf.writeBytes(bytes);
+		if(bytes.length > 0) {
+			buf.writeBytes(bytes);
+		}
 		return buf.writerIndex();
 	}
 	
 	/**
 	 * Reads a string from the buffer at the passed offset
-	 * @param offset The offset to read from
+	 * @param offset The offset to read the actual offset from
 	 * @return the read string
 	 */
 	protected String readUTF(final int offset) {
 		buf.readerIndex(offset);
+		final int actualOffset = buf.readInt();
+		buf.readerIndex(actualOffset);
 		final int x = buf.readInt();
-		if(x==0) return null;
+		if(x==0) return "";
 		final byte[] bytes = new byte[x];
 		buf.readBytes(bytes);
 		return new String(bytes, UTF8);
+	}
+	
+//	buf.writeBoolean(rsmd.isAutoIncrement(i));
+//	buf.writeBoolean(rsmd.isCaseSensitive(i));
+//	buf.writeBoolean(rsmd.isCurrency(i));
+//	buf.writeBoolean(rsmd.isDefinitelyWritable(i));
+//	buf.writeBoolean(rsmd.isReadOnly(i));
+//	buf.writeBoolean(rsmd.isSearchable(i));
+//	buf.writeBoolean(rsmd.isSigned(i));
+//	buf.writeBoolean(rsmd.isWritable(i));
+//	buf.writeInt(rsmd.getColumnDisplaySize(i));
+//	buf.writeInt(rsmd.getColumnType(i));
+//	buf.writeInt(rsmd.getPrecision(i));
+//	buf.writeInt(rsmd.getScale(i));
+//	buf.writeInt(rsmd.isNullable(i));
+//	final int strOffsets = buf.writerIndex();			
+//	final int[] indexes = new int[7];
+//	buf.writeBytes(SEVEN_INTS_BYTE_ARR);
+//	indexes[0] = buf.writerIndex();
+//	indexes[1] = writeUTF(rsmd.getCatalogName(i));
+//	indexes[2] = writeUTF(rsmd.getColumnClassName(i));
+//	indexes[3] = writeUTF(rsmd.getColumnLabel(i));
+//	indexes[4] = writeUTF(rsmd.getColumnName(i));
+//	indexes[5] = writeUTF(rsmd.getColumnTypeName(i));
+//	indexes[6] = writeUTF(rsmd.getSchemaName(i));
+//	final int lastOffset = writeUTF(rsmd.getTableName(i));
+	
+	
+	public String toString() {
+		if(buf.refCnt()<1) return "OffHeapResultMetaData Deallocated";
+		final StringBuilder b = new StringBuilder();
+		final int colCount = colCount();
+		for(int i = 1; i <= colCount; i++) {
+			b.append(printRow(i)).append("\n");
+		}
+		return b.toString();
+	}
+	
+	private int colCount() {
+		checkBuffer();
+		buf.readerIndex(0);
+		return buf.readInt();
+	}
+	
+	public StringBuilder printRow(final int col) {
+		StringBuilder b = new StringBuilder("Row").append(col).append(":[");
+		try {
+			b.append("cat:").append(getCatalogName(col)).append(", ")
+			.append("colClass:").append(getColumnClassName(col)).append(", ")
+			.append("label:").append(getColumnLabel(col)).append(", ")
+			.append("name:").append(getColumnName(col)).append(", ")
+			.append("typeName:").append(getColumnTypeName(col)).append(", ")
+			.append("schema:").append(getSchemaName(col)).append(", ")
+			.append("table:").append(getTableName(col)).append(", ")
+			.append("autoInc:").append(isAutoIncrement(col)).append(", ")
+			.append("caseSens:").append(isCaseSensitive(col)).append(", ")
+			.append("curr:").append(isCurrency(col)).append(", ")
+			.append("defWrite:").append(isDefinitelyWritable(col)).append(", ")
+			.append("ro:").append(isReadOnly(col)).append(", ")
+			.append("search:").append(isSearchable(col)).append(", ")
+			.append("signed:").append(isSigned(col)).append(", ")
+			.append("writable:").append(isWritable(col)).append(", ")
+			.append("dispSize:").append(getColumnDisplaySize(col)).append(", ")
+			.append("colType:").append(getColumnType(col)).append(", ")
+			.append("prec:").append(getPrecision(col)).append(", ")
+			.append("scale:").append(getScale(col)).append(", ")
+			.append("nullable:").append(isNullable(col)).append("]");			
+			return b;
+		} catch (SQLException sex) {
+			throw new RuntimeException(sex);
+		}
 	}
 	
 	/**
@@ -203,7 +291,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isAutoIncrement(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_AUTO_INCR);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_AUTO_INCR);
 	}
 
 	/**
@@ -213,7 +301,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isCaseSensitive(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_CASE_SENS);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_CASE_SENS);
 	}
 
 	/**
@@ -223,7 +311,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isSearchable(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_SEARCHABLE);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_SEARCHABLE);
 	}
 
 	/**
@@ -233,7 +321,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isCurrency(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_CURRENCY);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_CURRENCY);
 	}
 
 	/**
@@ -243,7 +331,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public int isNullable(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getInt(rowOffsets.get(column) + COL_NULLABLE);
+		return buf.getInt(rowOffsets.get(column-1) + COL_NULLABLE);
 	}
 
 	/**
@@ -253,7 +341,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isSigned(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_SIGNED);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_SIGNED);
 	}
 
 	/**
@@ -263,7 +351,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public int getColumnDisplaySize(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getInt(rowOffsets.get(column) + COL_DISPLAY_SIZE);
+		return buf.getInt(rowOffsets.get(column-1) + COL_DISPLAY_SIZE);
 	}
 
 	/**
@@ -273,7 +361,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getColumnLabel(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_LABEL);
+		return readUTF(rowOffsets.get(column-1) + COL_LABEL);
 	}
 
 	/**
@@ -283,7 +371,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getColumnName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_NAME);
 	}
 
 	/**
@@ -293,7 +381,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getSchemaName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_SCHEMA_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_SCHEMA_NAME);
 	}
 
 	/**
@@ -303,7 +391,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public int getPrecision(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getInt(rowOffsets.get(column) + COL_PRECISION);
+		return buf.getInt(rowOffsets.get(column-1) + COL_PRECISION);
 	}
 
 	/**
@@ -313,7 +401,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public int getScale(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getInt(rowOffsets.get(column) + COL_SCALE);
+		return buf.getInt(rowOffsets.get(column-1) + COL_SCALE);
 	}
 
 	/**
@@ -323,7 +411,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getTableName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_TABLE_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_TABLE_NAME);
 	}
 
 	/**
@@ -333,7 +421,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getCatalogName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_CAT_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_CAT_NAME);
 	}
 
 	/**
@@ -343,7 +431,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public int getColumnType(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getInt(rowOffsets.get(column) + COL_TYPE);
+		return buf.getInt(rowOffsets.get(column-1) + COL_TYPE);
 	}
 
 	/**
@@ -353,7 +441,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getColumnTypeName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_TYPE_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_TYPE_NAME);
 	}
 
 	/**
@@ -363,7 +451,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isReadOnly(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_READ_ONLY);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_READ_ONLY);
 	}
 
 	/**
@@ -373,7 +461,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isWritable(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_WRITABLE);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_WRITABLE);
 	}
 
 	/**
@@ -383,7 +471,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public boolean isDefinitelyWritable(final int column) throws SQLException {
 		checkBuffer();
-		return buf.getBoolean(rowOffsets.get(column) + COL_DEF_WRITABLE);
+		return buf.getBoolean(rowOffsets.get(column-1) + COL_DEF_WRITABLE);
 	}
 
 	/**
@@ -393,7 +481,7 @@ public class OffHeapResultMetaData implements ResultSetMetaData, Closeable {
 	@Override
 	public String getColumnClassName(final int column) throws SQLException {
 		checkBuffer();
-		return readUTF(rowOffsets.get(column) + COL_CLASS_NAME);
+		return readUTF(rowOffsets.get(column-1) + COL_CLASS_NAME);
 	}
 
 }
