@@ -106,7 +106,8 @@ public class OracleBaseTest extends BaseTest {
 	
 	@BeforeClass
 	public static void setupBeforeClass() throws Exception {
-		createDataSource("DEFAULT", "ecs", "ecs", "localhost", 1521, "orcl");
+		//createDataSource("DEFAULT", "ecs", "ecs", "localhost", 1521, "orcl");
+		createDataSource("DEFAULT", "tqreactor", "tq", "localhost", 1521, "xe");
 		log("Created default data source");
 	}
 

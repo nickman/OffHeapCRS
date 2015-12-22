@@ -15,9 +15,12 @@
  */
 package com.heliosapm.ohcrs.core;
 
-import java.sql.SQLException;
-
 import io.netty.buffer.ByteBuf;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Wrapper;
 
 /**
  * <p>Title: AbstractDriverCodec</p>
@@ -398,5 +401,44 @@ public abstract class AbstractDriverCodec<T> implements DriverCodec<T> {
 		return b.readDouble();
 	}
 	
-
+	
+	/**
+	 * {@inheritDoc}
+	 * @see com.heliosapm.ohcrs.core.DriverCodec#unwrap(java.sql.Connection)
+	 */
+	@Override
+	public Connection unwrap(final Connection conn) throws SQLException {
+		if(conn==null) throw new IllegalArgumentException("The passed connection was null");
+		if(getTargetConnectionClass().isAssignableFrom(conn.getClass())) {
+			return conn;
+		}		
+		if(conn instanceof Wrapper) {
+			final Wrapper wrapper = (Wrapper)conn;
+			if(wrapper.isWrapperFor(getTargetConnectionClass())) {
+				return wrapper.unwrap(getTargetConnectionClass());
+			}
+		}
+		return conn; // fix me: implement reflective calls to custom wrappers
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see com.heliosapm.ohcrs.core.DriverCodec#unwrap(java.sql.ResultSet)
+	 */
+	@Override
+	public ResultSet unwrap(final ResultSet rs) throws SQLException {
+		if(rs==null) throw new IllegalArgumentException("The passed ResultSet was null");
+		if(getTargetResultSetClass().isAssignableFrom(rs.getClass())) {
+			return rs;
+		}
+		if(rs instanceof Wrapper) {
+			final Wrapper wrapper = (Wrapper)rs;
+			if(wrapper.isWrapperFor(getTargetResultSetClass())) {
+				return wrapper.unwrap(getTargetResultSetClass());
+			}
+		}
+		return rs; // fix me: implement reflective calls to custom wrappers
+	}
+	
+	
 }

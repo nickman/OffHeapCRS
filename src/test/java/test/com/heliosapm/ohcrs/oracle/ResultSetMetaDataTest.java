@@ -44,8 +44,8 @@ public class ResultSetMetaDataTest extends OracleBaseTest {
 		ResultSet rset = null;
 		OffHeapResultMetaData ohrsmd = null;
 		try {
-//			ps = conn.prepareStatement("SELECT * FROM TQUEUE");
-			ps = conn.prepareStatement("SELECT T.ROWID, T.* FROM TQTEST T  WHERE ROWNUM < 3");
+			ps = conn.prepareStatement("SELECT T.ROWID, T.*  FROM TQUEUE T");
+//			ps = conn.prepareStatement("SELECT T.ROWID, T.* FROM TQTEST T  WHERE ROWNUM < 3");
 			
 			rset = ps.executeQuery();
 			final ResultSetMetaData rsmd = rset.getMetaData();

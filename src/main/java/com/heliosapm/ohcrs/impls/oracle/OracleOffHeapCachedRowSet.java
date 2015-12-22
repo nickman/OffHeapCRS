@@ -49,6 +49,10 @@ import javax.sql.rowset.RowSetWarning;
 import javax.sql.rowset.spi.SyncProvider;
 import javax.sql.rowset.spi.SyncProviderException;
 
+import oracle.sql.Datum;
+
+import com.heliosapm.ohcrs.core.AbstractOffHeapCachedRowSet;
+
 /**
  * <p>Title: OracleOffHeapCachedRowSet</p>
  * <p>Description: </p> 
@@ -57,15 +61,367 @@ import javax.sql.rowset.spi.SyncProviderException;
  * <p><code>com.heliosapm.ohcrs.impls.oracle.OracleOffHeapCachedRowSet</code></p>
  */
 
-public class OracleOffHeapCachedRowSet implements CachedRowSet {
+public class OracleOffHeapCachedRowSet extends AbstractOffHeapCachedRowSet<Datum> {
 
+	
 	/**
 	 * Creates a new OracleOffHeapCachedRowSet
 	 */
 	public OracleOffHeapCachedRowSet() {
-		// TODO Auto-generated constructor stub
+		super(new OracleDriverCodec());
+	}
+	
+	
+	
+	
+	
+	//================================================================================================
+	//		GETTERS
+	//================================================================================================
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getObject(int, java.lang.Class)
+	 */
+	@Override
+	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getObject(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getString(int)
+	 */
+	@Override
+	public String getString(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBoolean(int)
+	 */
+	@Override
+	public boolean getBoolean(final int columnIndex) throws SQLException {
+		buf.readerIndex()
+		return false;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getByte(int)
+	 */
+	@Override
+	public byte getByte(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getShort(int)
+	 */
+	@Override
+	public short getShort(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getInt(int)
+	 */
+	@Override
+	public int getInt(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getLong(int)
+	 */
+	@Override
+	public long getLong(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getFloat(int)
+	 */
+	@Override
+	public float getFloat(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getDouble(int)
+	 */
+	@Override
+	public double getDouble(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBigDecimal(int, int)
+	 */
+	@Override
+	public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBytes(int)
+	 */
+	@Override
+	public byte[] getBytes(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getDate(int)
+	 */
+	@Override
+	public Date getDate(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getTime(int)
+	 */
+	@Override
+	public Time getTime(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getTimestamp(int)
+	 */
+	@Override
+	public Timestamp getTimestamp(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getAsciiStream(int)
+	 */
+	@Override
+	public InputStream getAsciiStream(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getUnicodeStream(int)
+	 */
+	@Override
+	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBinaryStream(int)
+	 */
+	@Override
+	public InputStream getBinaryStream(int columnIndex) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getString(java.lang.String)
+	 */
+	@Override
+	public String getString(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBoolean(java.lang.String)
+	 */
+	@Override
+	public boolean getBoolean(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getByte(java.lang.String)
+	 */
+	@Override
+	public byte getByte(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getShort(java.lang.String)
+	 */
+	@Override
+	public short getShort(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getInt(java.lang.String)
+	 */
+	@Override
+	public int getInt(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getLong(java.lang.String)
+	 */
+	@Override
+	public long getLong(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getFloat(java.lang.String)
+	 */
+	@Override
+	public float getFloat(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getDouble(java.lang.String)
+	 */
+	@Override
+	public double getDouble(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBigDecimal(java.lang.String, int)
+	 */
+	@Override
+	public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBytes(java.lang.String)
+	 */
+	@Override
+	public byte[] getBytes(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getDate(java.lang.String)
+	 */
+	@Override
+	public Date getDate(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getTime(java.lang.String)
+	 */
+	@Override
+	public Time getTime(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getTimestamp(java.lang.String)
+	 */
+	@Override
+	public Timestamp getTimestamp(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getAsciiStream(java.lang.String)
+	 */
+	@Override
+	public InputStream getAsciiStream(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getUnicodeStream(java.lang.String)
+	 */
+	@Override
+	public InputStream getUnicodeStream(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getBinaryStream(java.lang.String)
+	 */
+	@Override
+	public InputStream getBinaryStream(String columnLabel) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
+	
+	//================================================================================================
 	/**
 	 * {@inheritDoc}
 	 * @see javax.sql.RowSet#getUrl()
@@ -1246,325 +1602,6 @@ public class OracleOffHeapCachedRowSet implements CachedRowSet {
 		return false;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getString(int)
-	 */
-	@Override
-	public String getString(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBoolean(int)
-	 */
-	@Override
-	public boolean getBoolean(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getByte(int)
-	 */
-	@Override
-	public byte getByte(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getShort(int)
-	 */
-	@Override
-	public short getShort(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getInt(int)
-	 */
-	@Override
-	public int getInt(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getLong(int)
-	 */
-	@Override
-	public long getLong(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getFloat(int)
-	 */
-	@Override
-	public float getFloat(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getDouble(int)
-	 */
-	@Override
-	public double getDouble(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBigDecimal(int, int)
-	 */
-	@Override
-	public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBytes(int)
-	 */
-	@Override
-	public byte[] getBytes(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getDate(int)
-	 */
-	@Override
-	public Date getDate(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getTime(int)
-	 */
-	@Override
-	public Time getTime(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getTimestamp(int)
-	 */
-	@Override
-	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getAsciiStream(int)
-	 */
-	@Override
-	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getUnicodeStream(int)
-	 */
-	@Override
-	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBinaryStream(int)
-	 */
-	@Override
-	public InputStream getBinaryStream(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getString(java.lang.String)
-	 */
-	@Override
-	public String getString(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBoolean(java.lang.String)
-	 */
-	@Override
-	public boolean getBoolean(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getByte(java.lang.String)
-	 */
-	@Override
-	public byte getByte(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getShort(java.lang.String)
-	 */
-	@Override
-	public short getShort(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getInt(java.lang.String)
-	 */
-	@Override
-	public int getInt(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getLong(java.lang.String)
-	 */
-	@Override
-	public long getLong(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getFloat(java.lang.String)
-	 */
-	@Override
-	public float getFloat(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getDouble(java.lang.String)
-	 */
-	@Override
-	public double getDouble(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBigDecimal(java.lang.String, int)
-	 */
-	@Override
-	public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBytes(java.lang.String)
-	 */
-	@Override
-	public byte[] getBytes(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getDate(java.lang.String)
-	 */
-	@Override
-	public Date getDate(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getTime(java.lang.String)
-	 */
-	@Override
-	public Time getTime(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getTimestamp(java.lang.String)
-	 */
-	@Override
-	public Timestamp getTimestamp(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getAsciiStream(java.lang.String)
-	 */
-	@Override
-	public InputStream getAsciiStream(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getUnicodeStream(java.lang.String)
-	 */
-	@Override
-	public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getBinaryStream(java.lang.String)
-	 */
-	@Override
-	public InputStream getBinaryStream(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	/**
 	 * {@inheritDoc}
@@ -3206,25 +3243,7 @@ public class OracleOffHeapCachedRowSet implements CachedRowSet {
 
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see javax.sql.rowset.CachedRowSet#populate(java.sql.ResultSet)
-	 */
-	@Override
-	public void populate(ResultSet data) throws SQLException {
-		// TODO Auto-generated method stub
 
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * @see javax.sql.rowset.CachedRowSet#execute(java.sql.Connection)
-	 */
-	@Override
-	public void execute(Connection conn) throws SQLException {
-		// TODO Auto-generated method stub
-
-	}
 
 	/**
 	 * {@inheritDoc}
@@ -3617,14 +3636,5 @@ public class OracleOffHeapCachedRowSet implements CachedRowSet {
 	}
 
 
-	public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 }

@@ -20,8 +20,12 @@ package com.heliosapm.ohcrs.impls.oracle;
 
 import io.netty.buffer.ByteBuf;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import oracle.jdbc.OracleConnection;
+import oracle.jdbc.OracleResultSet;
 import oracle.sql.CharacterSet;
 import oracle.sql.Datum;
 import oracle.sql.NUMBER;
@@ -73,6 +77,7 @@ public class OracleDriverCodec extends AbstractDriverCodec<Datum> {
 		b.readBytes(bytes);
 		final DBType dbType = DBType.forCode(typeCode);
 		switch(dbType) {
+			case BIT:
 			case BIGINT:
 			case DECIMAL:
 			case DOUBLE:
@@ -120,7 +125,22 @@ public class OracleDriverCodec extends AbstractDriverCodec<Datum> {
 		}
 	}
 
-
+	/**
+	 * {@inheritDoc}
+	 * @see com.heliosapm.ohcrs.core.DriverCodec#getTargetConnectionClass()
+	 */
+	@Override
+	public Class<? extends Connection> getTargetConnectionClass() {		
+		return OracleConnection.class;
+	}
 	
+	@Override
+	public Class<? extends ResultSet> getTargetResultSetClass() {		
+		return OracleResultSet.class;
+	}
+	
+	public Datum getObject(final ResultSet rset, final int col) throws SQLException {
+		return ((OracleResultSet)rset).getOracleObject(col);
+	}
 	
 }

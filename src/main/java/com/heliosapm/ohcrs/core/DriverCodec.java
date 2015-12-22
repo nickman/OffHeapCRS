@@ -15,6 +15,8 @@
  */
 package com.heliosapm.ohcrs.core;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import io.netty.buffer.ByteBuf;
@@ -289,8 +291,42 @@ public interface DriverCodec<T> {
      */
     public Double readDouble(ByteBuf b) throws SQLException;
 
+  	/**
+  	 * Returns the target DB specific connection class
+  	 * @return the target DB specific connection class
+  	 */
+  	public Class<? extends Connection> getTargetConnectionClass();
+  	
+  	/**
+  	 * Returns the target DB specific result set class
+  	 * @return the target DB specific result set class
+  	 */
+  	public Class<? extends ResultSet> getTargetResultSetClass();
+  	
+  	/**
+  	 * Attempts to unwrap the passed connection to get the underlying DB specific connection
+  	 * @param conn The connection to unwrap
+  	 * @return The unwrapped connection
+  	 * @throws SQLException if an error occurs while determining whether this is a wrapper for an object with the given interface or executing the unwrap
+  	 */
+  	public Connection unwrap(final Connection conn) throws SQLException;
 
+  	/**
+  	 * Attempts to unwrap the passed ResultSet to get the underlying DB specific ResultSet
+  	 * @param rs The ResultSet to unwrap
+  	 * @return The unwrapped ResultSet
+  	 * @throws SQLException if an error occurs while determining whether this is a wrapper for an object with the given interface or executing the unwrap
+  	 */
+  	public ResultSet unwrap(final ResultSet rs) throws SQLException;
 	
+  	/**
+  	 * Returns the generic serilizable base object to represent the value of a result set field that will be stored off heap
+  	 * @param rset The result set to read from
+  	 * @param col The column id (one based)
+  	 * @return the value
+  	 * @throws SQLException thrown on any error reading the value
+  	 */
+  	public T getObject(ResultSet rset, int col) throws SQLException;
 	
 	
 }

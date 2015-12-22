@@ -15,12 +15,13 @@
  */
 package com.heliosapm.ohcrs.core;
 
-import java.sql.Connection;
-
-import javax.sql.DataSource;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import javax.sql.DataSource;
 
 /**
  * <p>Title: DBContext</p>
@@ -38,6 +39,8 @@ public class DBContext {
 	protected DataSource ds = null;
 	/** The connection in the current context of one thread running an off-heap cached result set */
 	private final ThreadLocal<Connection> currentConnection = new ThreadLocal<Connection>();
+	/** Indicates if the connection in the current context was sourced from the datasource */
+	private final ThreadLocal<Boolean> currentConnectionFromDs = new ThreadLocal<Boolean>();
 	
 	
 	/**
@@ -72,10 +75,20 @@ public class DBContext {
 	/**
 	 * Returns the current context connection
 	 * @return the current context connection
+	 * @throws SQLException thrown on any error acquiring a connection
 	 */
-	public Connection getCurrentContextConnection() {
-		final Connection conn = currentConnection.get();
-		if(conn==null) throw new IllegalStateException("No current context connection set");
+	public Connection getCurrentContextConnection() throws SQLException {
+		Connection conn = currentConnection.get();
+		if(conn==null) {
+			if(ds==null) {
+				throw new IllegalStateException("No current context connection or data source set");
+			}
+			conn = ds.getConnection();
+			currentConnection.set(conn);
+			currentConnectionFromDs.set(true);
+		} else {
+			currentConnectionFromDs.set(false);
+		}
 		return conn;
 	}
 	
@@ -87,6 +100,7 @@ public class DBContext {
 	public DBContext setCurrentContextConnection(final Connection conn) {
 		if(conn==null) throw new IllegalStateException("The passed connection was null");
 		currentConnection.set(conn);
+		currentConnectionFromDs.set(false);
 		return this;
 	}
 	
@@ -96,6 +110,7 @@ public class DBContext {
 	 */
 	public DBContext clearCurrentContextConnection() {
 		currentConnection.remove();
+		currentConnectionFromDs.remove();
 		return this;
 	}
 }
