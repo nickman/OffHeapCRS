@@ -56,8 +56,7 @@ public class OracleDriverCodec extends AbstractDriverCodec<Datum> {
 	 */
 	@Override
 	public int write(final Datum t, final DBType d, final ByteBuf b) throws SQLException {
-		prefix(t, d, b);
-		if(t!=null) {
+		if(prefix(t, d, b)) {
 			final byte[] bytes = t.getBytes();
 			b.writeInt(bytes.length);
 			if(t instanceof oracle.sql.CHAR) {

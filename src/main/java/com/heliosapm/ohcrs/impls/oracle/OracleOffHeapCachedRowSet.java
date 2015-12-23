@@ -51,6 +51,7 @@ import javax.sql.rowset.spi.SyncProviderException;
 
 import oracle.sql.Datum;
 
+import com.heliosapm.ohcrs.core.AbstractDriverCodec.Prefix;
 import com.heliosapm.ohcrs.core.AbstractOffHeapCachedRowSet;
 
 /**
@@ -104,18 +105,28 @@ public class OracleOffHeapCachedRowSet extends AbstractOffHeapCachedRowSet<Datum
 	 * @see java.sql.ResultSet#getString(int)
 	 */
 	@Override
-	public String getString(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+	public String getString(final int columnIndex) throws SQLException {
+		nav(currentRow(), columnIndex);
+		final Prefix p = Prefix.pre(buf);
+		if(p.isNull()) return null;
+		return driverCodec.read(p.getDBType(), buf).stringValue();
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.sql.ResultSet#getString(java.lang.String)
+	 */
+	@Override
+	public String getString(final String columnLabel) throws SQLException {
+		return getString(colId(columnLabel));
+	}	
 
 	/**
 	 * {@inheritDoc}
 	 * @see java.sql.ResultSet#getBoolean(int)
 	 */
 	@Override
-	public boolean getBoolean(final int columnIndex) throws SQLException {
-		buf.readerIndex()
+	public boolean getBoolean(final int columnIndex) throws SQLException {		
 		return false;
 	}
 
@@ -259,15 +270,7 @@ public class OracleOffHeapCachedRowSet extends AbstractOffHeapCachedRowSet<Datum
 		return null;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see java.sql.ResultSet#getString(java.lang.String)
-	 */
-	@Override
-	public String getString(String columnLabel) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
 
 	/**
 	 * {@inheritDoc}

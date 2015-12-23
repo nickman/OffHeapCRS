@@ -21,6 +21,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Wrapper;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>Title: AbstractDriverCodec</p>
@@ -76,11 +78,82 @@ public abstract class AbstractDriverCodec<T> implements DriverCodec<T> {
 	 * @param o The object being written so we can test it for null
 	 * @param t The DBType of the object being written
 	 * @param b The buffer to write to
+	 * @return true if the value was not null, false otherwise
 	 */
 	@SuppressWarnings("static-method")
-	protected void prefix(final Object o, DBType t, final ByteBuf b) {
+	protected boolean prefix(final Object o, DBType t, final ByteBuf b) {
 		b.writeShort(t.code());
-		b.writeBoolean(o==P || o!=null);
+		final boolean notNull = (o==P || o!=null); 
+		b.writeBoolean(notNull);
+		return notNull;
+	}
+	
+	public static class Prefix {
+		/** The DB type code */
+		final short typeCode;
+		/** The null flag */
+		final boolean vIsNull;
+		
+		private static final Map<String, Prefix> prefixes = new ConcurrentHashMap<String, Prefix>();
+		
+		/**
+		 * Reads the prefix from the passed pre-navigated buffer
+		 * @param b The buffer to read from
+		 * @return the read prefix
+		 */
+		public static Prefix pre(final ByteBuf b) {
+			final short t = b.readShort();
+			final boolean n = b.readBoolean();
+			final String key = (t + ":" + n).intern();
+			Prefix p = prefixes.get(key);
+			if(p==null) {
+				synchronized(prefixes) {
+					p = prefixes.get(key);
+					if(p==null) {
+						p = new Prefix(t, n);
+					}
+				}
+			}
+			return p;
+		}
+		
+		/**
+		 * Creates a new Prefix
+		 * @param typeCode The DB type code
+		 * @param vIsNull The null flag
+		 */
+		private Prefix(final short typeCode, final boolean vIsNull) {
+			this.typeCode = typeCode;
+			this.vIsNull = vIsNull;
+		}
+
+		/**
+		 * Returns type code
+		 * @return the typeCode
+		 */
+		public short getDBTypeCode() {
+			return typeCode;
+		}
+		
+		/**
+		 * Returns the DBType
+		 * @return the DBType
+		 */
+		public DBType getDBType() {
+			return DBType.forCode(typeCode);
+		}
+
+		/**
+		 * Indicates if the value was null
+		 * @return true if the value was null, false otherwise
+		 */
+		public boolean isNull() {
+			return !vIsNull;
+		}
+		
+		
+		
+		
 	}
 
 	/**

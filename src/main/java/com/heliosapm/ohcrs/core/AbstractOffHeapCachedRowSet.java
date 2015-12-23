@@ -20,6 +20,7 @@ package com.heliosapm.ohcrs.core;
 
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import io.netty.buffer.ByteBuf;
 
 import java.sql.Connection;
@@ -44,9 +45,15 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 	protected final TIntArrayList rowOffsets = new TIntArrayList(128);
 	/** The row end offsets */
 	protected final TIntArrayList rowEndOffsets = new TIntArrayList(128);
+	/** The column offsets */
+	protected final TIntObjectHashMap<int[]> columnOffsets = new TIntObjectHashMap<int[]>(64); 
 	
+	public static final int ROOT_BUFFER_OFFSET = 4;
+	
+	/** The column name to column id decode */
+	protected final TObjectIntHashMap<String> columnNameToId = new TObjectIntHashMap<String>(64);
 	/** The column id to column name decode */
-	protected final TIntObjectHashMap<String> columnNames = new TIntObjectHashMap<String>(64); 
+	protected final TIntObjectHashMap<String> columnIdToName = new TIntObjectHashMap<String>(64);
 	/** The driver codec */
 	protected final DriverCodec<T> driverCodec;
 	
@@ -67,8 +74,9 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 	
 	@Override
 	public boolean next() throws SQLException {
-		
-		return false;
+		final int rowid = incrRow();
+		if(rowid==-9) return false;
+		return true;
 	}
 	
 	public int size() {		
@@ -81,7 +89,7 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 	
 	protected int incrRow() {
 		final int newRow = currentRow.get()[0]++;
-		if(newRow > size()) throw new RuntimeException("End of rows");
+		if(newRow > size()) return -9;
 		return newRow;
 	}
 	
@@ -91,7 +99,16 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 	protected void reset() {
 		if(buf!=null) buf.clear();
 		rowOffsets.clear();
-		columnNames.clear();
+		columnNameToId.clear();
+		columnIdToName.clear();
+	}
+	
+	protected void nav(final int rowId, final int colId) {
+		buf.readerIndex(ROOT_BUFFER_OFFSET + rowOffsets.get(rowId) + columnOffsets.get(rowId)[colId-1]);
+	}
+	
+	protected void nav(final int rowId, final String colName) {
+		nav(rowId, colId(colName));
 	}
 	
 	protected int[] writeEmptyRowHeader(final int colCount) {
@@ -132,20 +149,21 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 		int row = 0;
 		final ResultSetMetaData rsmd = rset.getMetaData();
 		final int colCount = rsmd.getColumnCount();
-		final DBType[] colTypes = new DBType[colCount+1];
+		final DBType[] colTypes = new DBType[colCount];
 		for(int i = 1; i <= colCount; i++) {
-			colTypes[i] = DBType.forCode(rsmd.getColumnType(i));
-			columnNames.put(i, rsmd.getColumnLabel(i));
+			colTypes[i-1] = DBType.forCode(rsmd.getColumnType(i));
+			columnNameToId.put(rsmd.getColumnLabel(i), i);
+			columnIdToName.put(i, rsmd.getColumnLabel(i));
 		}
 		while(rs.next()) {
 			row++;
 			if(row < startRow) continue;
-			final int[] fieldOffsets = writeEmptyRowHeader(colCount);
+			final int[] fieldOffsets = new int[colCount];
 			for(int i = 1; i <= colCount; i++) {
-				fieldOffsets[i] = driverCodec.write(driverCodec.getObject(rs, i), colTypes[i], buf);
+				fieldOffsets[i-1] = driverCodec.write(driverCodec.getObject(rs, i), colTypes[i-1], buf);
 			}
-			rowOffsets.add(buf.writerIndex());
-			writeFieldOffsets(fieldOffsets);			
+			columnOffsets.put(row-1, fieldOffsets);
+			rowOffsets.add(buf.writerIndex());			
 		}		
 	}
 	
@@ -155,10 +173,25 @@ public abstract class AbstractOffHeapCachedRowSet<T> implements CachedRowSet {
 	 * @return the column name
 	 */
 	public String colName(final int columnId) {
-		final String name = columnNames.get(columnId);
+		final String name = columnIdToName.get(columnId);
 		if(name==null) throw new RuntimeException("Invalid column id [" + columnId + "]");
 		return name;
 	}
+	
+	/** The trove int representing null for column based maps */
+	public static final int NULL_COLL_INT = -999;
+	
+	/**
+	 * Returns the column id for the passed column name
+	 * @param columnName The column name 
+	 * @return the column id
+	 */
+	public int colId(final String columnName) {
+		final int id = columnNameToId.get(columnName);
+		if(NULL_COLL_INT==id) throw new RuntimeException("Invalid column name [" + columnName + "]");
+		return id;
+	}
+	
 
 	/**
 	 * {@inheritDoc}
